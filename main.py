@@ -806,7 +806,7 @@ class MarkerHandler(http.server.SimpleHTTPRequestHandler):
         elif self.path == '/avatar.jpg':
             # Обработка загрузки аватара (PNG)
             try:
-                with open('avatar.png', 'rb') as f:
+                with open('avatar.jpg', 'rb') as f:
                     self.send_response(200)
                     self.send_header('Content-type', 'image/png')
                     self.end_headers()
