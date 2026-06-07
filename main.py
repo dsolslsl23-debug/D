@@ -4,7 +4,7 @@ import http.server
 import socketserver
 from http.server import SimpleHTTPRequestHandler
 
-# HTML файл с картой и КРАСИВЫМ приветственным окном
+# HTML файл с картой и музыкой
 MAP_HTML = """<!DOCTYPE html>
 <html>
 <head>
@@ -116,6 +116,32 @@ MAP_HTML = """<!DOCTYPE html>
         .show-list-btn:hover {
             transform: scale(1.02);
             box-shadow: 0 6px 20px rgba(102,126,234,0.4);
+        }
+        
+        /* КНОПКА УПРАВЛЕНИЯ МУЗЫКОЙ */
+        .music-control {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 40px;
+            cursor: pointer;
+            z-index: 1000;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+            font-weight: normal;
+        }
+        
+        .music-control:hover {
+            background: rgba(0, 0, 0, 0.85);
+            transform: scale(1.02);
         }
         
         /* МОДАЛЬНОЕ ОКНО СО СПИСКОМ МЕТОК */
@@ -244,22 +270,6 @@ MAP_HTML = """<!DOCTYPE html>
             background: #cc0000;
         }
         
-        .clear-all-btn {
-            background: #ff4444;
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 8px;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 15px;
-            font-size: 14px;
-        }
-        
-        .clear-all-btn:hover {
-            background: #cc0000;
-        }
-        
         .empty-message {
             text-align: center;
             color: #999;
@@ -289,6 +299,13 @@ MAP_HTML = """<!DOCTYPE html>
                 left: 15px;
                 padding: 10px 16px;
                 font-size: 14px;
+            }
+            
+            .music-control {
+                bottom: 15px;
+                right: 15px;
+                padding: 8px 12px;
+                font-size: 12px;
             }
             
             .markers-modal-content {
@@ -473,6 +490,11 @@ MAP_HTML = """<!DOCTYPE html>
 <body>
     <div id="map"></div>
 
+    <!-- Аудиоплеер для фоновой музыки -->
+    <audio id="bgMusic" loop preload="auto">
+        <source src="/music.mp3" type="audio/mpeg">
+    </audio>
+
     <!-- ПРИВЕТСТВЕННОЕ ОКНО НА ВЕСЬ ЭКРАН -->
     <div id="welcomeModal" class="welcome-modal">
         <div class="welcome-content">
@@ -490,8 +512,8 @@ MAP_HTML = """<!DOCTYPE html>
                 <div class="small-text">✨ Я ваш гид по этому приключению ✨</div>
             </div>
             
-            <!-- Кнопка закрытия -->
-            <button class="close-welcome-btn" onclick="closeWelcomeModal()">
+            <!-- Кнопка закрытия (теперь запускает музыку) -->
+            <button class="close-welcome-btn" onclick="startJourney()">
                 Начать путешествие →
             </button>
         </div>
@@ -508,6 +530,11 @@ MAP_HTML = """<!DOCTYPE html>
     <!-- Кнопка вызова списка меток -->
     <button class="show-list-btn" onclick="openMarkersList()">
         📋 Список меток (<span id="markersCount">0</span>)
+    </button>
+
+    <!-- Кнопка управления музыкой (появляется после старта) -->
+    <button id="musicControlBtn" class="music-control" style="display: none;" onclick="toggleMusic()">
+        🔇 Музыка выкл
     </button>
 
     <!-- Модальное окно со списком меток -->
@@ -532,10 +559,58 @@ MAP_HTML = """<!DOCTYPE html>
 
         var markers = {};
         var nextId = 0;
+        
+        // Музыкальные переменные
+        var audio = document.getElementById('bgMusic');
+        var musicControlBtn = document.getElementById('musicControlBtn');
+        var isMusicPlaying = false;
+        var musicStarted = false;
+
+        // Функция запуска музыки (вызывается при старте путешествия)
+        function startMusic() {
+            if (!musicStarted) {
+                audio.play().then(() => {
+                    isMusicPlaying = true;
+                    musicStarted = true;
+                    musicControlBtn.style.display = 'flex';
+                    musicControlBtn.innerHTML = '🎵 Музыка вкл';
+                    musicControlBtn.style.background = 'rgba(76, 175, 80, 0.9)';
+                }).catch(error => {
+                    console.log('Автовоспроизведение заблокировано:', error);
+                    musicControlBtn.style.display = 'flex';
+                    musicControlBtn.innerHTML = '🔇 Нажмите для музыки';
+                    musicControlBtn.style.background = 'rgba(0, 0, 0, 0.7)';
+                });
+            }
+        }
+        
+        // Функция переключения музыки
+        function toggleMusic() {
+            if (isMusicPlaying) {
+                audio.pause();
+                isMusicPlaying = false;
+                musicControlBtn.innerHTML = '🔇 Музыка выкл';
+                musicControlBtn.style.background = 'rgba(0, 0, 0, 0.7)';
+            } else {
+                audio.play().then(() => {
+                    isMusicPlaying = true;
+                    musicControlBtn.innerHTML = '🎵 Музыка вкл';
+                    musicControlBtn.style.background = 'rgba(76, 175, 80, 0.9)';
+                }).catch(error => {
+                    console.log('Не удалось запустить музыку:', error);
+                });
+            }
+        }
+
+        // Функция начала путешествия (закрывает окно и запускает музыку)
+        function startJourney() {
+            closeWelcomeModal();
+            startMusic();
+        }
 
         // Функция для загрузки аватара (если есть)
         function loadAvatar() {
-            fetch('/avatar.jpg')
+            fetch('/avatar.png')
                 .then(response => {
                     if (response.ok) {
                         return response.blob();
@@ -728,16 +803,26 @@ class MarkerHandler(http.server.SimpleHTTPRequestHandler):
                 with open(self.markers_file, 'r') as f:
                     markers = json.load(f)
             self.wfile.write(json.dumps(markers).encode())
-        elif self.path == '/avatar.jpg':
-            # Обработка загрузки аватара
+        elif self.path == '/avatar.png':
+            # Обработка загрузки аватара (PNG)
             try:
-                with open('avatar.jpg', 'rb') as f:
+                with open('avatar.png', 'rb') as f:
                     self.send_response(200)
-                    self.send_header('Content-type', 'image/jpeg')
+                    self.send_header('Content-type', 'image/png')
                     self.end_headers()
                     self.wfile.write(f.read())
             except FileNotFoundError:
-                # Если файла нет - отдаем 404, фронтенд использует эмодзи
+                self.send_response(404)
+                self.end_headers()
+        elif self.path == '/music.mp3':
+            # Обработка загрузки музыки
+            try:
+                with open('music.mp3', 'rb') as f:
+                    self.send_response(200)
+                    self.send_header('Content-type', 'audio/mpeg')
+                    self.end_headers()
+                    self.wfile.write(f.read())
+            except FileNotFoundError:
                 self.send_response(404)
                 self.end_headers()
         else:
@@ -781,6 +866,7 @@ def start_server():
     handler = MarkerHandler
     with socketserver.TCPServer(("", PORT), handler) as httpd:
         print(f"🌍 Сервер запущен на порту {PORT}")
+        print(f"🎵 Музыка запустится после нажатия 'Начать путешествие'")
         httpd.serve_forever()
 
 if __name__ == "__main__":
