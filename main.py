@@ -4,6 +4,7 @@ import http.server
 import socketserver
 from http.server import SimpleHTTPRequestHandler
 
+# HTML файл с картой и музыкой - ТОНКАЯ РАМКА ВОКРУГ АВАТАРА
 MAP_HTML = """<!DOCTYPE html>
 <html>
 <head>
@@ -305,6 +306,11 @@ MAP_HTML = """<!DOCTYPE html>
                 width: 95%;
                 max-height: 75vh;
             }
+            
+            .avatar {
+                width: 200px !important;
+                height: 200px !important;
+            }
         }
 
         /* ========== ПРИВЕТСТВЕННОЕ ОКНО ========== */
@@ -340,7 +346,7 @@ MAP_HTML = """<!DOCTYPE html>
             position: relative;
             z-index: 2;
             text-align: center;
-            max-width: 800px;
+            max-width: 700px;
             width: 90%;
             animation: fadeInUp 0.6s ease-out;
         }
@@ -356,14 +362,14 @@ MAP_HTML = """<!DOCTYPE html>
             }
         }
         
-        /* Аватар - БОЛЬШОЙ, фото НЕ ОБРЕЗАЕТСЯ */
+        /* Аватар - УМЕНЬШЕННЫЙ САМ АВАТАР, НО КРУГ НА МЕСТЕ */
         .avatar {
-            width: 380px !important;
-            height: 380px !important;
+            width: 260px !important;
+            height: 260px !important;
             margin: 0 auto 20px;
             border-radius: 50%;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 8px;
+            padding: 0;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             animation: avatarFloat 3s ease-in-out infinite;
         }
@@ -377,17 +383,15 @@ MAP_HTML = """<!DOCTYPE html>
             }
         }
         
-        /* Фото - БЕЗ ОБРЕЗАНИЯ, с белой обводкой */
+        /* Фото занимает ВЕСЬ круг без отступов */
         .avatar img {
             width: 100% !important;
             height: 100% !important;
             border-radius: 50%;
-            object-fit: contain;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: 4px solid white;
+            object-fit: cover;
         }
         
-        /* Пустое фото */
+        /* Пустое фото - без отступов */
         .empty-photo {
             width: 100%;
             height: 100%;
@@ -398,7 +402,6 @@ MAP_HTML = """<!DOCTYPE html>
             justify-content: center;
             font-size: 100px;
             color: #999;
-            border: 4px solid white;
         }
         
         .dialog-bubble {
@@ -456,11 +459,10 @@ MAP_HTML = """<!DOCTYPE html>
             box-shadow: 0 8px 25px rgba(102,126,234,0.4);
         }
         
-        /* Адаптация для телефонов */
         @media (max-width: 768px) {
             .avatar {
-                width: 280px !important;
-                height: 280px !important;
+                width: 200px !important;
+                height: 200px !important;
             }
             
             .empty-photo {
