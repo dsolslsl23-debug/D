@@ -1,0 +1,7 @@
+*.pyc
+__pycache__/
+markers_web.json
+.DS_Store
+venv/
+env/
+.env
