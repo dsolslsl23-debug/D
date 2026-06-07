@@ -356,10 +356,10 @@ MAP_HTML = """<!DOCTYPE html>
             }
         }
         
-        /* Аватар - БОЛЬШОЙ 320px, чтобы ничего не обрезалось */
+        /* Аватар - БОЛЬШОЙ, фото НЕ ОБРЕЗАЕТСЯ */
         .avatar {
-            width: 320px !important;
-            height: 320px !important;
+            width: 380px !important;
+            height: 380px !important;
             margin: 0 auto 20px;
             border-radius: 50%;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -377,16 +377,17 @@ MAP_HTML = """<!DOCTYPE html>
             }
         }
         
-        /* Фото с белой обводкой */
+        /* Фото - БЕЗ ОБРЕЗАНИЯ, с белой обводкой */
         .avatar img {
             width: 100% !important;
             height: 100% !important;
             border-radius: 50%;
-            object-fit: cover;
+            object-fit: contain;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: 4px solid white;
         }
         
-        /* Пустое фото - с белой обводкой */
+        /* Пустое фото */
         .empty-photo {
             width: 100%;
             height: 100%;
@@ -458,8 +459,8 @@ MAP_HTML = """<!DOCTYPE html>
         /* Адаптация для телефонов */
         @media (max-width: 768px) {
             .avatar {
-                width: 240px !important;
-                height: 240px !important;
+                width: 280px !important;
+                height: 280px !important;
             }
             
             .empty-photo {
