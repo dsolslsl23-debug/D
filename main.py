@@ -4,7 +4,7 @@ import http.server
 import socketserver
 from http.server import SimpleHTTPRequestHandler
 
-# HTML файл с картой, ИСПРАВЛЕННЫМИ контролами и окном приветствия
+# HTML файл с картой и ВЫЗЫВАЕМЫМ списком меток
 MAP_HTML = """<!DOCTYPE html>
 <html>
 <head>
@@ -39,105 +39,265 @@ MAP_HTML = """<!DOCTYPE html>
             z-index: 1;
         }
         
-        /* Общие стили для всех контролов */
-        .controls, .markers-list {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 16px;
-            padding: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            font-size: 14px;
-            z-index: 1000 !important; /* ВЫШЕ карты */
-            border: 1px solid rgba(0,0,0,0.05);
-        }
-        
-        /* ПАНЕЛЬ СПИСКА (Слева) */
-        .markers-list {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            width: 260px;
-            max-height: 80vh;
-            overflow-y: auto;
-            transition: transform 0.3s ease;
-        }
-        
-        /* ПАНЕЛЬ ДОБАВЛЕНИЯ (Справа) */
+        /* Панель добавления меток (справа вверху) */
         .controls {
             position: absolute;
             top: 20px;
             right: 20px;
             width: 260px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            z-index: 1000;
+            border: 1px solid rgba(0,0,0,0.05);
         }
         
-        /* Адаптация под планшеты и телефоны */
-        @media (max-width: 768px) {
-            .markers-list {
-                top: auto;
-                bottom: 20px;
-                left: 20px;
-                right: 20px;
-                width: auto;
-                max-height: 35vh;
-                font-size: 14px;
-            }
-            
-            .controls {
-                top: 20px;
-                right: 20px;
-                left: auto;
-                width: 220px;
-                font-size: 13px;
-            }
-            
-            .controls h4 { font-size: 14px; margin: 0 0 5px 0; }
-            .controls input, .controls button { padding: 8px; margin: 4px 0; }
-            .marker-item { padding: 8px; }
+        .controls h4 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
         }
         
-        /* Для очень маленьких телефонов */
-        @media (max-width: 480px) {
-            .controls { width: 180px; padding: 8px; top: 10px; right: 10px; }
-            .markers-list { padding: 8px; bottom: 10px; left: 10px; right: 10px; }
-            .controls input, .controls button { font-size: 12px; }
-        }
-        
-        /* Стили элементов списка */
-        .marker-item {
+        .controls input {
+            width: 100%;
             padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        
+        .controls button {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .controls button:hover {
+            background: #45a049;
+        }
+        
+        .controls small {
+            display: block;
+            text-align: center;
+            margin-top: 6px;
+            color: #666;
+            font-size: 11px;
+        }
+        
+        /* КНОПКА ВЫЗОВА СПИСКА МЕТОК */
+        .show-list-btn {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            z-index: 1000;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .show-list-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 6px 20px rgba(102,126,234,0.4);
+        }
+        
+        /* МОДАЛЬНОЕ ОКНО СО СПИСКОМ МЕТОК */
+        .markers-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .markers-modal.active {
+            display: flex;
+        }
+        
+        .markers-modal-content {
+            background: white;
+            border-radius: 24px;
+            width: 90%;
+            max-width: 400px;
+            max-height: 70vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            animation: modalSlideIn 0.3s ease-out;
+        }
+        
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+        
+        .markers-modal-header {
+            padding: 20px 20px 10px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .markers-modal-header h3 {
+            margin: 0;
+            font-size: 18px;
+            color: #333;
+        }
+        
+        .close-modal-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #999;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+        
+        .close-modal-btn:hover {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .markers-list-container {
+            padding: 10px 20px 20px 20px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        
+        .marker-item {
+            padding: 12px;
             cursor: pointer;
             border-bottom: 1px solid #eee;
             display: flex;
             justify-content: space-between;
             align-items: center;
             transition: background 0.2s;
+            border-radius: 8px;
         }
+        
         .marker-item:hover {
             background: #f5f5f5;
         }
         
-        button {
-            background: #4CAF50;
+        .marker-info {
+            flex: 1;
+        }
+        
+        .marker-info b {
+            font-size: 15px;
+            color: #333;
+        }
+        
+        .marker-info small {
+            font-size: 11px;
+            color: #999;
+        }
+        
+        .delete-marker-btn {
+            background: #ff4444;
             color: white;
             border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
             cursor: pointer;
-            border-radius: 8px;
-            font-weight: 500;
-        }
-        button:hover {
-            background: #45a049;
-        }
-        .delete-btn {
-            background: #ff4444;
-            padding: 4px 8px;
-            border-radius: 8px;
             font-size: 12px;
+            transition: background 0.2s;
         }
-        .delete-btn:hover {
+        
+        .delete-marker-btn:hover {
             background: #cc0000;
         }
+        
+        .clear-all-btn {
+            background: #ff4444;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+        
+        .clear-all-btn:hover {
+            background: #cc0000;
+        }
+        
+        .empty-message {
+            text-align: center;
+            color: #999;
+            padding: 40px 20px;
+        }
+        
+        /* Адаптация для телефонов */
+        @media (max-width: 768px) {
+            .controls {
+                width: 220px;
+                top: 10px;
+                right: 10px;
+                padding: 10px;
+            }
+            
+            .controls h4 {
+                font-size: 13px;
+            }
+            
+            .controls input, .controls button {
+                font-size: 12px;
+                padding: 6px;
+            }
+            
+            .show-list-btn {
+                bottom: 15px;
+                left: 15px;
+                padding: 10px 16px;
+                font-size: 14px;
+            }
+            
+            .markers-modal-content {
+                width: 95%;
+                max-height: 75vh;
+            }
+        }
 
-        /* Стили для модального окна приветствия (без изменений) */
+        /* Стили для модального окна приветствия */
         .welcome-modal {
             position: fixed;
             top: 0;
@@ -146,13 +306,13 @@ MAP_HTML = """<!DOCTYPE html>
             height: 100%;
             background: rgba(0,0,0,0.85);
             backdrop-filter: blur(8px);
-            z-index: 2000;
+            z-index: 3000;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-family: Arial, sans-serif;
             transition: opacity 0.3s ease;
         }
+        
         .welcome-content {
             background: white;
             border-radius: 32px;
@@ -163,6 +323,7 @@ MAP_HTML = """<!DOCTYPE html>
             box-shadow: 0 20px 40px rgba(0,0,0,0.4);
             animation: slideIn 0.4s cubic-bezier(0.34, 1.2, 0.64, 1);
         }
+        
         @keyframes slideIn {
             from {
                 transform: scale(0.9) translateY(20px);
@@ -173,6 +334,7 @@ MAP_HTML = """<!DOCTYPE html>
                 opacity: 1;
             }
         }
+        
         .avatar {
             width: 100px;
             height: 100px;
@@ -185,18 +347,21 @@ MAP_HTML = """<!DOCTYPE html>
             font-size: 48px;
             box-shadow: 0 8px 20px rgba(0,0,0,0.15);
         }
+        
         .welcome-content h2 {
             color: #333;
             margin-bottom: 12px;
             font-size: 24px;
         }
+        
         .welcome-content p {
             color: #666;
             line-height: 1.5;
             margin-bottom: 25px;
             font-size: 14px;
         }
-        .close-btn {
+        
+        .close-welcome-btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 12px 28px;
@@ -208,10 +373,12 @@ MAP_HTML = """<!DOCTYPE html>
             transition: transform 0.2s, box-shadow 0.2s;
             width: auto;
         }
-        .close-btn:hover {
+        
+        .close-welcome-btn:hover {
             transform: scale(1.02);
             box-shadow: 0 5px 15px rgba(102,126,234,0.4);
         }
+        
         .tip {
             font-size: 12px;
             color: #aaa;
@@ -230,26 +397,37 @@ MAP_HTML = """<!DOCTYPE html>
             <p>
                 📍 Кликните по карте, чтобы добавить метку<br>
                 🏷️ Дайте название точке<br>
-                🗑️ Удаляйте из списка слева
+                📋 Нажмите кнопку снизу слева, чтобы увидеть список
             </p>
-            <button class="close-btn" onclick="closeWelcomeModal()">Начать →</button>
-            <div class="tip">💡 Панели управления — слева и справа</div>
+            <button class="close-welcome-btn" onclick="closeWelcomeModal()">Начать →</button>
+            <div class="tip">💡 Кнопка со списком меток — внизу слева</div>
         </div>
     </div>
 
-    <!-- Панель добавления (Справа) -->
+    <!-- Панель добавления меток (справа вверху) -->
     <div class="controls">
-        <h4 style="margin:0 0 8px 0">➕ Добавить метку</h4>
-        <input type="text" id="markerName" placeholder="Название" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:8px; box-sizing:border-box;">
-        <button onclick="addMarkerByCoords()" style="width:100%; padding:8px; margin-top:5px;">По координатам</button>
-        <small style="display:block; text-align:center; margin-top:6px; color:#666;">Или кликните по карте</small>
+        <h4>➕ Добавить метку</h4>
+        <input type="text" id="markerName" placeholder="Название метки">
+        <button onclick="addMarkerByCoords()">Добавить по координатам</button>
+        <small>Или кликните по карте</small>
     </div>
 
-    <!-- Панель списка (Слева) -->
-    <div class="markers-list">
-        <h4 style="margin:0 0 8px 0">📌 Список меток</h4>
-        <div id="markersList" style="max-height:calc(100% - 70px); overflow-y:auto;"></div>
-        <button onclick="clearAllMarkers()" style="background:#ff4444; width:100%; padding:8px; margin-top:10px;">🗑️ Очистить все</button>
+    <!-- Кнопка вызова списка меток -->
+    <button class="show-list-btn" onclick="openMarkersList()">
+        📋 Список меток (<span id="markersCount">0</span>)
+    </button>
+
+    <!-- Модальное окно со списком меток -->
+    <div id="markersModal" class="markers-modal">
+        <div class="markers-modal-content">
+            <div class="markers-modal-header">
+                <h3>📌 Мои метки</h3>
+                <button class="close-modal-btn" onclick="closeMarkersList()">&times;</button>
+            </div>
+            <div class="markers-list-container">
+                <div id="markersList"></div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -261,6 +439,25 @@ MAP_HTML = """<!DOCTYPE html>
 
         var markers = {};
         var nextId = 0;
+
+        // Функции для модального окна со списком
+        function openMarkersList() {
+            const modal = document.getElementById('markersModal');
+            modal.classList.add('active');
+            updateMarkersCount();
+        }
+        
+        function closeMarkersList() {
+            const modal = document.getElementById('markersModal');
+            modal.classList.remove('active');
+        }
+        
+        // Обновление счетчика меток на кнопке
+        function updateMarkersCount() {
+            const count = Object.keys(markers).length;
+            const countSpan = document.getElementById('markersCount');
+            if (countSpan) countSpan.textContent = count;
+        }
 
         // Функция закрытия окна приветствия
         function closeWelcomeModal() {
@@ -282,14 +479,16 @@ MAP_HTML = """<!DOCTYPE html>
                     if (parseInt(id) >= nextId) nextId = parseInt(id) + 1;
                 }
                 updateList();
+                updateMarkersCount();
             } catch(e) { console.log(e); }
         }
 
         function addMarkerToMap(id, lat, lng, name) {
             var marker = L.marker([lat, lng]).addTo(map);
-            marker.bindPopup("<b>" + name + "</b><br>" + lat + ", " + lng);
+            marker.bindPopup("<b>" + name + "</b><br>" + lat.toFixed(5) + ", " + lng.toFixed(5));
             markers[id] = { marker: marker, lat: lat, lng: lng, name: name };
             updateList();
+            updateMarkersCount();
         }
 
         function saveMarker(id, lat, lng, name) {
@@ -306,31 +505,59 @@ MAP_HTML = """<!DOCTYPE html>
                 map.removeLayer(markers[id].marker);
                 delete markers[id];
                 updateList();
+                updateMarkersCount();
             }
         }
 
         function updateList() {
             var listDiv = document.getElementById('markersList');
+            if (!listDiv) return;
+            
             listDiv.innerHTML = '';
-            for (let id in markers) {
-                let m = markers[id];
+            
+            const markersArray = Object.entries(markers);
+            if (markersArray.length === 0) {
+                listDiv.innerHTML = '<div class="empty-message">✨ Нет меток<br>Кликните по карте, чтобы добавить</div>';
+                return;
+            }
+            
+            for (let [id, m] of markersArray) {
                 let div = document.createElement('div');
                 div.className = 'marker-item';
-                div.innerHTML = '<div><b>' + m.name + '</b><br><small>' + m.lat.toFixed(4) + ', ' + m.lng.toFixed(4) + '</small></div>';
+                div.innerHTML = `
+                    <div class="marker-info">
+                        <b>${escapeHtml(m.name)}</b><br>
+                        <small>${m.lat.toFixed(5)}, ${m.lng.toFixed(5)}</small>
+                    </div>
+                    <button class="delete-marker-btn" data-id="${id}">🗑️</button>
+                `;
+                
                 div.onclick = (function(lat, lng) { 
-                    return function() { map.setView([lat, lng], 15); };
+                    return function(e) {
+                        if (e.target.classList && e.target.classList.contains('delete-marker-btn')) return;
+                        map.setView([lat, lng], 15);
+                        closeMarkersList();
+                    };
                 })(m.lat, m.lng);
-
-                let delBtn = document.createElement('button');
-                delBtn.innerHTML = '✕';
-                delBtn.className = 'delete-btn';
-                delBtn.onclick = (function(id) { return function(e) { 
-                    e.stopPropagation(); 
-                    deleteMarker(id); 
+                
+                const delBtn = div.querySelector('.delete-marker-btn');
+                delBtn.onclick = (function(id) { return function(e) {
+                    e.stopPropagation();
+                    deleteMarker(id);
                 }; })(id);
-                div.appendChild(delBtn);
+                
                 listDiv.appendChild(div);
             }
+        }
+        
+        // Простая защита от XSS
+        function escapeHtml(str) {
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
         }
 
         function addMarker(lat, lng, name) {
@@ -348,15 +575,16 @@ MAP_HTML = """<!DOCTYPE html>
             document.getElementById('markerName').value = '';
         }
 
-        function clearAllMarkers() {
-            if (confirm("Удалить все метки?")) {
-                for (let id in markers) deleteMarker(id);
-            }
-        }
-
         map.on('click', function(e) {
             let name = prompt("Название метки:", "Новое событие");
             if (name) addMarker(e.latlng.lat, e.latlng.lng, name);
+        });
+
+        // Закрытие модального окна по клику на фон
+        document.getElementById('markersModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeMarkersList();
+            }
         });
 
         loadMarkers();
