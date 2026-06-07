@@ -4,7 +4,7 @@ import http.server
 import socketserver
 from http.server import SimpleHTTPRequestHandler
 
-# HTML файл с картой и ВЫЗЫВАЕМЫМ списком меток
+# HTML файл с картой и КРАСИВЫМ приветственным окном
 MAP_HTML = """<!DOCTYPE html>
 <html>
 <head>
@@ -297,110 +297,203 @@ MAP_HTML = """<!DOCTYPE html>
             }
         }
 
-        /* Стили для модального окна приветствия */
+        /* ========== ПРИВЕТСТВЕННОЕ ОКНО НА ВЕСЬ ЭКРАН ========== */
         .welcome-modal {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(8px);
+            background-image: url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=2070');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
             z-index: 3000;
             display: flex;
             justify-content: center;
             align-items: center;
-            transition: opacity 0.3s ease;
+            transition: opacity 0.5s ease;
+        }
+        
+        /* Темный оверлей поверх фона для читаемости */
+        .welcome-modal::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1;
         }
         
         .welcome-content {
-            background: white;
-            border-radius: 32px;
-            padding: 30px 25px;
+            position: relative;
+            z-index: 2;
             text-align: center;
-            max-width: 340px;
+            max-width: 500px;
             width: 85%;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-            animation: slideIn 0.4s cubic-bezier(0.34, 1.2, 0.64, 1);
+            animation: fadeInUp 0.6s ease-out;
         }
         
-        @keyframes slideIn {
+        @keyframes fadeInUp {
             from {
-                transform: scale(0.9) translateY(20px);
                 opacity: 0;
+                transform: translateY(30px);
             }
             to {
-                transform: scale(1) translateY(0);
                 opacity: 1;
+                transform: translateY(0);
             }
         }
         
+        /* Аватар */
         .avatar {
-            width: 100px;
-            height: 100px;
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 20px;
             border-radius: 50%;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 5px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            animation: avatarFloat 3s ease-in-out infinite;
+        }
+        
+        @keyframes avatarFloat {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+        
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid white;
+        }
+        
+        /* Пустое фото (заглушка) */
+        .empty-photo {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 20px;
-            font-size: 48px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            font-size: 60px;
+            color: #999;
+            border: 3px solid white;
         }
         
-        .welcome-content h2 {
+        /* Облачко диалога */
+        .dialog-bubble {
+            background: white;
+            border-radius: 30px;
+            padding: 20px 30px;
+            margin: 20px auto;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            max-width: 350px;
+        }
+        
+        .dialog-bubble::before {
+            content: '';
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-bottom: 20px solid white;
+        }
+        
+        .dialog-bubble p {
+            font-size: 18px;
             color: #333;
-            margin-bottom: 12px;
-            font-size: 24px;
-        }
-        
-        .welcome-content p {
-            color: #666;
             line-height: 1.5;
-            margin-bottom: 25px;
-            font-size: 14px;
+            margin: 0;
         }
         
+        .dialog-bubble .small-text {
+            font-size: 13px;
+            color: #999;
+            margin-top: 8px;
+        }
+        
+        /* Кнопка закрытия */
         .close-welcome-btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 12px 28px;
+            padding: 14px 35px;
             border: none;
             border-radius: 40px;
-            font-size: 16px;
+            font-size: 18px;
             font-weight: bold;
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
-            width: auto;
+            margin-top: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         }
         
         .close-welcome-btn:hover {
-            transform: scale(1.02);
-            box-shadow: 0 5px 15px rgba(102,126,234,0.4);
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(102,126,234,0.4);
         }
         
-        .tip {
-            font-size: 12px;
-            color: #aaa;
-            margin-top: 15px;
+        /* Адаптация для телефонов */
+        @media (max-width: 768px) {
+            .avatar {
+                width: 120px;
+                height: 120px;
+            }
+            
+            .dialog-bubble {
+                padding: 15px 25px;
+                max-width: 280px;
+            }
+            
+            .dialog-bubble p {
+                font-size: 16px;
+            }
+            
+            .close-welcome-btn {
+                padding: 12px 30px;
+                font-size: 16px;
+            }
         }
     </style>
 </head>
 <body>
     <div id="map"></div>
 
-    <!-- Модальное окно приветствия -->
+    <!-- ПРИВЕТСТВЕННОЕ ОКНО НА ВЕСЬ ЭКРАН -->
     <div id="welcomeModal" class="welcome-modal">
         <div class="welcome-content">
-            <div class="avatar">🗺️</div>
-            <h2>Добро пожаловать!</h2>
-            <p>
-                📍 Кликните по карте, чтобы добавить метку<br>
-                🏷️ Дайте название точке<br>
-                📋 Нажмите кнопку снизу слева, чтобы увидеть список
-            </p>
-            <button class="close-welcome-btn" onclick="closeWelcomeModal()">Начать →</button>
-            <div class="tip">💡 Кнопка со списком меток — внизу слева</div>
+            <!-- Аватар с пустым фото -->
+            <div class="avatar">
+                <div class="empty-photo" id="avatarPlaceholder">
+                    🧙‍♂️
+                </div>
+                <img id="avatarImg" style="display: none;" alt="Аватар">
+            </div>
+            
+            <!-- Облачко диалога -->
+            <div class="dialog-bubble">
+                <p>🌟 Добро пожаловать в Карту Событий! 🌟</p>
+                <div class="small-text">✨ Я ваш гид по этому приключению ✨</div>
+            </div>
+            
+            <!-- Кнопка закрытия -->
+            <button class="close-welcome-btn" onclick="closeWelcomeModal()">
+                Начать путешествие →
+            </button>
         </div>
     </div>
 
@@ -440,6 +533,29 @@ MAP_HTML = """<!DOCTYPE html>
         var markers = {};
         var nextId = 0;
 
+        // Функция для загрузки аватара (если есть)
+        function loadAvatar() {
+            fetch('/avatar.jpg')
+                .then(response => {
+                    if (response.ok) {
+                        return response.blob();
+                    }
+                    throw new Error('Нет фото');
+                })
+                .then(blob => {
+                    const url = URL.createObjectURL(blob);
+                    const img = document.getElementById('avatarImg');
+                    const placeholder = document.getElementById('avatarPlaceholder');
+                    img.src = url;
+                    img.style.display = 'block';
+                    placeholder.style.display = 'none';
+                })
+                .catch(() => {
+                    // Если фото нет - оставляем эмодзи
+                    console.log('Используется стандартный аватар');
+                });
+        }
+
         // Функции для модального окна со списком
         function openMarkersList() {
             const modal = document.getElementById('markersModal');
@@ -459,13 +575,13 @@ MAP_HTML = """<!DOCTYPE html>
             if (countSpan) countSpan.textContent = count;
         }
 
-        // Функция закрытия окна приветствия
+        // Функция закрытия приветственного окна
         function closeWelcomeModal() {
             const modal = document.getElementById('welcomeModal');
             modal.style.opacity = '0';
             setTimeout(() => {
                 modal.style.display = 'none';
-            }, 300);
+            }, 500);
         }
 
         // Загрузка сохраненных меток
@@ -586,7 +702,9 @@ MAP_HTML = """<!DOCTYPE html>
                 closeMarkersList();
             }
         });
-
+        
+        // Загружаем аватар и метки
+        loadAvatar();
         loadMarkers();
     </script>
 </body>
@@ -610,6 +728,18 @@ class MarkerHandler(http.server.SimpleHTTPRequestHandler):
                 with open(self.markers_file, 'r') as f:
                     markers = json.load(f)
             self.wfile.write(json.dumps(markers).encode())
+        elif self.path == '/avatar.jpg':
+            # Обработка загрузки аватара
+            try:
+                with open('avatar.jpg', 'rb') as f:
+                    self.send_response(200)
+                    self.send_header('Content-type', 'image/jpeg')
+                    self.end_headers()
+                    self.wfile.write(f.read())
+            except FileNotFoundError:
+                # Если файла нет - отдаем 404, фронтенд использует эмодзи
+                self.send_response(404)
+                self.end_headers()
         else:
             super().do_GET()
 
