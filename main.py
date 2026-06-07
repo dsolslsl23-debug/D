@@ -4,7 +4,7 @@ import http.server
 import socketserver
 from http.server import SimpleHTTPRequestHandler
 
-# HTML файл с картой и музыкой - УВЕЛИЧЕННЫЙ АВАТАР 250px
+# HTML файл с картой и музыкой - ТОНКАЯ РАМКА ВОКРУГ АВАТАРА
 MAP_HTML = """<!DOCTYPE html>
 <html>
 <head>
@@ -29,7 +29,6 @@ MAP_HTML = """<!DOCTYPE html>
             width: 100vw;
         }
         
-        /* Карта занимает ВСЮ доступную область */
         #map { 
             height: 100vh; 
             width: 100%; 
@@ -39,7 +38,6 @@ MAP_HTML = """<!DOCTYPE html>
             z-index: 1;
         }
         
-        /* Панель добавления меток (справа вверху) */
         .controls {
             position: absolute;
             top: 20px;
@@ -92,7 +90,6 @@ MAP_HTML = """<!DOCTYPE html>
             font-size: 11px;
         }
         
-        /* КНОПКА ВЫЗОВА СПИСКА МЕТОК */
         .show-list-btn {
             position: absolute;
             bottom: 20px;
@@ -118,7 +115,6 @@ MAP_HTML = """<!DOCTYPE html>
             box-shadow: 0 6px 20px rgba(102,126,234,0.4);
         }
         
-        /* КНОПКА УПРАВЛЕНИЯ МУЗЫКОЙ */
         .music-control {
             position: absolute;
             bottom: 20px;
@@ -144,7 +140,6 @@ MAP_HTML = """<!DOCTYPE html>
             transform: scale(1.02);
         }
         
-        /* МОДАЛЬНОЕ ОКНО СО СПИСКОМ МЕТОК */
         .markers-modal {
             display: none;
             position: fixed;
@@ -276,7 +271,6 @@ MAP_HTML = """<!DOCTYPE html>
             padding: 40px 20px;
         }
         
-        /* Адаптация для телефонов */
         @media (max-width: 768px) {
             .controls {
                 width: 220px;
@@ -312,9 +306,14 @@ MAP_HTML = """<!DOCTYPE html>
                 width: 95%;
                 max-height: 75vh;
             }
+            
+            .avatar {
+                width: 200px !important;
+                height: 200px !important;
+            }
         }
 
-        /* ========== ПРИВЕТСТВЕННОЕ ОКНО НА ВЕСЬ ЭКРАН ========== */
+        /* ========== ПРИВЕТСТВЕННОЕ ОКНО ========== */
         .welcome-modal {
             position: fixed;
             top: 0;
@@ -332,7 +331,6 @@ MAP_HTML = """<!DOCTYPE html>
             transition: opacity 0.5s ease;
         }
         
-        /* Темный оверлей поверх фона для читаемости */
         .welcome-modal::before {
             content: '';
             position: absolute;
@@ -364,14 +362,14 @@ MAP_HTML = """<!DOCTYPE html>
             }
         }
         
-        /* Аватар - БОЛЬШОЙ 250px */
+        /* Аватар - УМЕНЬШЕННЫЙ САМ АВАТАР, НО КРУГ НА МЕСТЕ */
         .avatar {
-            width: 250px !important;
-            height: 250px !important;
+            width: 260px !important;
+            height: 260px !important;
             margin: 0 auto 20px;
             border-radius: 50%;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 5px;
+            padding: 0;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             animation: avatarFloat 3s ease-in-out infinite;
         }
@@ -385,15 +383,15 @@ MAP_HTML = """<!DOCTYPE html>
             }
         }
         
+        /* Фото занимает ВЕСЬ круг без отступов */
         .avatar img {
             width: 100% !important;
             height: 100% !important;
             border-radius: 50%;
             object-fit: cover;
-            border: 3px solid white;
         }
         
-        /* Пустое фото (заглушка) */
+        /* Пустое фото - без отступов */
         .empty-photo {
             width: 100%;
             height: 100%;
@@ -402,12 +400,10 @@ MAP_HTML = """<!DOCTYPE html>
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 90px;
+            font-size: 100px;
             color: #999;
-            border: 3px solid white;
         }
         
-        /* Облачко диалога */
         .dialog-bubble {
             background: white;
             border-radius: 30px;
@@ -444,7 +440,6 @@ MAP_HTML = """<!DOCTYPE html>
             margin-top: 8px;
         }
         
-        /* Кнопка закрытия */
         .close-welcome-btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -464,7 +459,6 @@ MAP_HTML = """<!DOCTYPE html>
             box-shadow: 0 8px 25px rgba(102,126,234,0.4);
         }
         
-        /* Адаптация для телефонов */
         @media (max-width: 768px) {
             .avatar {
                 width: 200px !important;
@@ -494,15 +488,12 @@ MAP_HTML = """<!DOCTYPE html>
 <body>
     <div id="map"></div>
 
-    <!-- Аудиоплеер для фоновой музыки -->
     <audio id="bgMusic" loop preload="auto">
         <source src="/music.mp3" type="audio/mpeg">
     </audio>
 
-    <!-- ПРИВЕТСТВЕННОЕ ОКНО НА ВЕСЬ ЭКРАН -->
     <div id="welcomeModal" class="welcome-modal">
         <div class="welcome-content">
-            <!-- Аватар с пустым фото -->
             <div class="avatar" id="avatarTest">
                 <div class="empty-photo" id="avatarPlaceholder">
                     🧙‍♂️
@@ -510,20 +501,17 @@ MAP_HTML = """<!DOCTYPE html>
                 <img id="avatarImg" style="display: none;" alt="Аватар">
             </div>
             
-            <!-- Облачко диалога -->
             <div class="dialog-bubble">
                 <p>🌟 Добро пожаловать в Карту Событий! 🌟</p>
                 <div class="small-text">✨ Я ваш гид по этому приключению ✨</div>
             </div>
             
-            <!-- Кнопка закрытия (теперь запускает музыку) -->
             <button class="close-welcome-btn" onclick="startJourney()">
                 Начать путешествие →
             </button>
         </div>
     </div>
 
-    <!-- Панель добавления меток (справа вверху) -->
     <div class="controls">
         <h4>➕ Добавить метку</h4>
         <input type="text" id="markerName" placeholder="Название метки">
@@ -531,17 +519,14 @@ MAP_HTML = """<!DOCTYPE html>
         <small>Или кликните по карте</small>
     </div>
 
-    <!-- Кнопка вызова списка меток -->
     <button class="show-list-btn" onclick="openMarkersList()">
         📋 Список меток (<span id="markersCount">0</span>)
     </button>
 
-    <!-- Кнопка управления музыкой (появляется после старта) -->
     <button id="musicControlBtn" class="music-control" style="display: none;" onclick="toggleMusic()">
         🔇 Музыка выкл
     </button>
 
-    <!-- Модальное окно со списком меток -->
     <div id="markersModal" class="markers-modal">
         <div class="markers-modal-content">
             <div class="markers-modal-header">
@@ -555,21 +540,13 @@ MAP_HTML = """<!DOCTYPE html>
     </div>
 
     <script>
-        // ОТЛАДКА: Проверка размера аватара
         window.addEventListener('load', function() {
             var avatar = document.getElementById('avatarTest');
             if (avatar) {
-                var width = avatar.offsetWidth;
-                console.log('Размер аватара: ' + width + 'px');
-                if (width < 200) {
-                    console.warn('Аватар слишком маленький! Должен быть 250px, а он ' + width + 'px');
-                } else {
-                    console.log('✅ Аватар увеличен до ' + width + 'px');
-                }
+                console.log('Размер аватара: ' + avatar.offsetWidth + 'px');
             }
         });
 
-        // Инициализация карты
         var map = L.map('map').setView([55.751244, 37.618423], 12);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap'
@@ -578,13 +555,11 @@ MAP_HTML = """<!DOCTYPE html>
         var markers = {};
         var nextId = 0;
         
-        // Музыкальные переменные
         var audio = document.getElementById('bgMusic');
         var musicControlBtn = document.getElementById('musicControlBtn');
         var isMusicPlaying = false;
         var musicStarted = false;
 
-        // Функция запуска музыки (вызывается при старте путешествия)
         function startMusic() {
             if (!musicStarted) {
                 audio.play().then(() => {
@@ -602,7 +577,6 @@ MAP_HTML = """<!DOCTYPE html>
             }
         }
         
-        // Функция переключения музыки
         function toggleMusic() {
             if (isMusicPlaying) {
                 audio.pause();
@@ -620,13 +594,11 @@ MAP_HTML = """<!DOCTYPE html>
             }
         }
 
-        // Функция начала путешествия (закрывает окно и запускает музыку)
         function startJourney() {
             closeWelcomeModal();
             startMusic();
         }
 
-        // Функция для загрузки аватара (если есть)
         function loadAvatar() {
             fetch('/avatar.jpg')
                 .then(response => {
@@ -648,7 +620,6 @@ MAP_HTML = """<!DOCTYPE html>
                 });
         }
 
-        // Функции для модального окна со списком
         function openMarkersList() {
             const modal = document.getElementById('markersModal');
             modal.classList.add('active');
@@ -660,14 +631,12 @@ MAP_HTML = """<!DOCTYPE html>
             modal.classList.remove('active');
         }
         
-        // Обновление счетчика меток на кнопке
         function updateMarkersCount() {
             const count = Object.keys(markers).length;
             const countSpan = document.getElementById('markersCount');
             if (countSpan) countSpan.textContent = count;
         }
 
-        // Функция закрытия приветственного окна
         function closeWelcomeModal() {
             const modal = document.getElementById('welcomeModal');
             modal.style.opacity = '0';
@@ -676,7 +645,6 @@ MAP_HTML = """<!DOCTYPE html>
             }, 500);
         }
 
-        // Загрузка сохраненных меток
         async function loadMarkers() {
             try {
                 let response = await fetch('/markers');
@@ -758,7 +726,6 @@ MAP_HTML = """<!DOCTYPE html>
             }
         }
         
-        // Простая защита от XSS
         function escapeHtml(str) {
             return str.replace(/[&<>]/g, function(m) {
                 if (m === '&') return '&amp;';
@@ -788,14 +755,12 @@ MAP_HTML = """<!DOCTYPE html>
             if (name) addMarker(e.latlng.lat, e.latlng.lng, name);
         });
 
-        // Закрытие модального окна по клику на фон
         document.getElementById('markersModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 closeMarkersList();
             }
         });
         
-        // Загружаем аватар и метки
         loadAvatar();
         loadMarkers();
     </script>
@@ -874,7 +839,6 @@ class MarkerHandler(http.server.SimpleHTTPRequestHandler):
     def log_message(self, format, *args):
         pass
 
-# Получаем порт от Railway
 PORT = int(os.environ.get("PORT", 8080))
 
 def start_server():
