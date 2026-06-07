@@ -348,7 +348,7 @@ MAP_HTML = """<!DOCTYPE html>
             position: relative;
             z-index: 2;
             text-align: center;
-            max-width: 500px;
+            max-width: 600px;
             width: 85%;
             animation: fadeInUp 0.6s ease-out;
         }
@@ -364,10 +364,10 @@ MAP_HTML = """<!DOCTYPE html>
             }
         }
         
-        /* Аватар */
+        /* Аватар - увеличенный */
         .avatar {
-            width: 150px;
-            height: 150px;
+            width: 250px;
+            height: 250px;
             margin: 0 auto 20px;
             border-radius: 50%;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -402,7 +402,7 @@ MAP_HTML = """<!DOCTYPE html>
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 60px;
+            font-size: 80px;
             color: #999;
             border: 3px solid white;
         }
@@ -467,8 +467,8 @@ MAP_HTML = """<!DOCTYPE html>
         /* Адаптация для телефонов */
         @media (max-width: 768px) {
             .avatar {
-                width: 120px;
-                height: 120px;
+                width: 180px;
+                height: 180px;
             }
             
             .dialog-bubble {
