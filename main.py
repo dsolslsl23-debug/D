@@ -4,7 +4,7 @@ import http.server
 import socketserver
 from http.server import SimpleHTTPRequestHandler
 
-# HTML файл с картой и музыкой
+# HTML файл с картой и музыкой - УВЕЛИЧЕННЫЙ АВАТАР 250px
 MAP_HTML = """<!DOCTYPE html>
 <html>
 <head>
@@ -348,8 +348,8 @@ MAP_HTML = """<!DOCTYPE html>
             position: relative;
             z-index: 2;
             text-align: center;
-            max-width: 600px;
-            width: 85%;
+            max-width: 700px;
+            width: 90%;
             animation: fadeInUp 0.6s ease-out;
         }
         
@@ -364,10 +364,10 @@ MAP_HTML = """<!DOCTYPE html>
             }
         }
         
-        /* Аватар - увеличенный */
+        /* Аватар - БОЛЬШОЙ 250px */
         .avatar {
-            width: 250px;
-            height: 250px;
+            width: 250px !important;
+            height: 250px !important;
             margin: 0 auto 20px;
             border-radius: 50%;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -386,8 +386,8 @@ MAP_HTML = """<!DOCTYPE html>
         }
         
         .avatar img {
-            width: 100%;
-            height: 100%;
+            width: 100% !important;
+            height: 100% !important;
             border-radius: 50%;
             object-fit: cover;
             border: 3px solid white;
@@ -402,7 +402,7 @@ MAP_HTML = """<!DOCTYPE html>
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 80px;
+            font-size: 90px;
             color: #999;
             border: 3px solid white;
         }
@@ -467,8 +467,12 @@ MAP_HTML = """<!DOCTYPE html>
         /* Адаптация для телефонов */
         @media (max-width: 768px) {
             .avatar {
-                width: 180px;
-                height: 180px;
+                width: 200px !important;
+                height: 200px !important;
+            }
+            
+            .empty-photo {
+                font-size: 70px;
             }
             
             .dialog-bubble {
@@ -499,7 +503,7 @@ MAP_HTML = """<!DOCTYPE html>
     <div id="welcomeModal" class="welcome-modal">
         <div class="welcome-content">
             <!-- Аватар с пустым фото -->
-            <div class="avatar">
+            <div class="avatar" id="avatarTest">
                 <div class="empty-photo" id="avatarPlaceholder">
                     🧙‍♂️
                 </div>
@@ -551,6 +555,20 @@ MAP_HTML = """<!DOCTYPE html>
     </div>
 
     <script>
+        // ОТЛАДКА: Проверка размера аватара
+        window.addEventListener('load', function() {
+            var avatar = document.getElementById('avatarTest');
+            if (avatar) {
+                var width = avatar.offsetWidth;
+                console.log('Размер аватара: ' + width + 'px');
+                if (width < 200) {
+                    console.warn('Аватар слишком маленький! Должен быть 250px, а он ' + width + 'px');
+                } else {
+                    console.log('✅ Аватар увеличен до ' + width + 'px');
+                }
+            }
+        });
+
         // Инициализация карты
         var map = L.map('map').setView([55.751244, 37.618423], 12);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -626,7 +644,6 @@ MAP_HTML = """<!DOCTYPE html>
                     placeholder.style.display = 'none';
                 })
                 .catch(() => {
-                    // Если фото нет - оставляем эмодзи
                     console.log('Используется стандартный аватар');
                 });
         }
@@ -804,18 +821,16 @@ class MarkerHandler(http.server.SimpleHTTPRequestHandler):
                     markers = json.load(f)
             self.wfile.write(json.dumps(markers).encode())
         elif self.path == '/avatar.jpg':
-            # Обработка загрузки аватара (PNG)
             try:
                 with open('avatar.jpg', 'rb') as f:
                     self.send_response(200)
-                    self.send_header('Content-type', 'image/png')
+                    self.send_header('Content-type', 'image/jpeg')
                     self.end_headers()
                     self.wfile.write(f.read())
             except FileNotFoundError:
                 self.send_response(404)
                 self.end_headers()
         elif self.path == '/music.mp3':
-            # Обработка загрузки музыки
             try:
                 with open('music.mp3', 'rb') as f:
                     self.send_response(200)
