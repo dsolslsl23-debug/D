@@ -4,7 +4,7 @@ import http.server
 import socketserver
 from http.server import SimpleHTTPRequestHandler
 
-# HTML файл с картой (ваш существующий MAP_HTML)
+# HTML файл с картой и окном приветствия
 MAP_HTML = """<!DOCTYPE html>
 <html>
 <head>
@@ -65,10 +65,102 @@ MAP_HTML = """<!DOCTYPE html>
             background: #ff4444;
             margin-left: 5px;
         }
+
+        /* Стили для модального окна приветствия */
+        .welcome-modal {
+            display: flex;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, sans-serif;
+        }
+        .welcome-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            max-width: 400px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            animation: slideIn 0.5s ease-out;
+        }
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        .avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 60px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+        .welcome-content h2 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .welcome-content p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+        .close-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        .close-btn:hover {
+            transform: scale(1.05);
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+        }
+        .tip {
+            font-size: 12px;
+            color: #999;
+            margin-top: 15px;
+        }
     </style>
 </head>
 <body>
     <div id="map"></div>
+
+    <!-- Модальное окно приветствия -->
+    <div id="welcomeModal" class="welcome-modal">
+        <div class="welcome-content">
+            <div class="avatar">
+                🗺️
+            </div>
+            <h2>Добро пожаловать в Карту Событий!</h2>
+            <p>
+                ✨ Здесь вы можете отмечать важные места на карте<br><br>
+                📍 Кликните по карте, чтобы добавить метку<br>
+                🏷️ Дайте название каждой точке<br>
+                🗑️ Удаляйте ненужные метки из списка
+            </p>
+            <button class="close-btn" onclick="closeWelcomeModal()">Начать путешествие →</button>
+            <div class="tip">💡 Совет: Попробуйте кликнуть в любом месте карты!</div>
+        </div>
+    </div>
 
     <div class="controls">
         <h4>➕ Добавить метку</h4>
@@ -92,6 +184,16 @@ MAP_HTML = """<!DOCTYPE html>
         var markers = {};
         var nextId = 0;
 
+        // Функция закрытия окна приветствия
+        function closeWelcomeModal() {
+            const modal = document.getElementById('welcomeModal');
+            modal.style.animation = 'slideIn 0.3s reverse';
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 300);
+        }
+
+        // Загрузка сохраненных меток
         async function loadMarkers() {
             try {
                 let response = await fetch('/markers');
