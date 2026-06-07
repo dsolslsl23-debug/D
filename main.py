@@ -610,7 +610,7 @@ MAP_HTML = """<!DOCTYPE html>
 
         // Функция для загрузки аватара (если есть)
         function loadAvatar() {
-            fetch('/avatar.png')
+            fetch('/avatar.jpg')
                 .then(response => {
                     if (response.ok) {
                         return response.blob();
@@ -803,7 +803,7 @@ class MarkerHandler(http.server.SimpleHTTPRequestHandler):
                 with open(self.markers_file, 'r') as f:
                     markers = json.load(f)
             self.wfile.write(json.dumps(markers).encode())
-        elif self.path == '/avatar.png':
+        elif self.path == '/avatar.jpg':
             # Обработка загрузки аватара (PNG)
             try:
                 with open('avatar.png', 'rb') as f:
