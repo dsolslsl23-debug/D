@@ -304,7 +304,7 @@ MAP_HTML = """<!DOCTYPE html>
             left: 0;
             width: 100%;
             height: 100%;
-            background-image: url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=2070');
+            background-image: url('b1b2b90663f5d8b5f36c53166e61777d.png');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
